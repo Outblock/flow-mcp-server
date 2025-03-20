@@ -11,7 +11,8 @@
     "start": "bun src/index.js",
     "dev": "bun --watch src/index.js",
     "build": "mkdir -p build && bun build src/index.js --outdir build --target node",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "release": "semantic-release"
   },
   "keywords": [
     "flow",
@@ -34,7 +35,10 @@
     "node-fetch": "^2.7.0"
   },
   "devDependencies": {
-    "bun": "^1.0.30"
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "bun": "^1.0.30",
+    "semantic-release": "^24.2.3"
   },
   "engines": {
     "node": ">=18.0.0"
