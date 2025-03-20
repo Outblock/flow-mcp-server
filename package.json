@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "type": "module",
   "bin": {
-    "flow-mcp-server": "./src/index.js"
+    "flow-mcp-server": "src/index.js"
   },
   "scripts": {
     "start": "bun src/index.js",
@@ -44,6 +44,6 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/outblock/flow-mcp-server.git"
+    "url": "git+https://github.com/outblock/flow-mcp-server.git"
   }
 }
