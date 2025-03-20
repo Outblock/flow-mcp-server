@@ -2,6 +2,7 @@ import * as fcl from '@onflow/fcl';
 import * as t from '@onflow/types';
 import { resolveDomain } from './domain.js';
 import { getFlowBalance } from './balance.js';
+import { error } from '../utils/logger.js';
 
 /**
  * Get detailed information about a Flow account
@@ -58,9 +59,9 @@ export async function getAccountInfo(address) {
       domain: resolvedDomain ? resolvedDomain.domain : null,
       network: fcl.config().get('flow.network')
     };
-  } catch (error) {
-    console.error("Error getting account info:", error);
-    throw new Error(`Failed to get account info: ${error.message}`);
+  } catch (err) {
+    error("Error getting account info:", err);
+    throw new Error(`Failed to get account info: ${err.message}`);
   }
 }
 
@@ -118,8 +119,8 @@ export async function getAccountNFTs(address) {
       nftCollections: paths,
       network: fcl.config().get('flow.network')
     };
-  } catch (error) {
-    console.error("Error getting account NFTs:", error);
-    throw new Error(`Failed to get account NFTs: ${error.message}`);
+  } catch (err) {
+    error("Error getting account NFTs:", err);
+    throw new Error(`Failed to get account NFTs: ${err.message}`);
   }
 }

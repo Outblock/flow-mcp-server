@@ -14,6 +14,7 @@ import { handleToolCall } from './tools/handler.js';
 import { toolDefinitions } from './tools/definitions.js';
 import { parseArgs, showHelp } from './cli.js';
 import { networks } from './config/networks.js';
+import { log, error } from './utils/logger.js';
 
 // Load environment variables
 dotenv.config();
@@ -36,14 +37,14 @@ if (config.help) {
 
 // Show version and exit if requested
 if (config.version) {
-  console.log(`Flow MCP Server v${packageJson.version}`);
+  log(`Flow MCP Server v${packageJson.version}`);
   process.exit(0);
 }
 
 // Validate network
 if (!networks[config.network.toLowerCase()]) {
-  console.error(`Error: Unsupported network "${config.network}"`);
-  console.log(`Available networks: ${Object.keys(networks).join(', ')}`);
+  error(`Error: Unsupported network "${config.network}"`);
+  log(`Available networks: ${Object.keys(networks).join(', ')}`);
   process.exit(1);
 }
 
@@ -60,18 +61,18 @@ if (!process.env.FLOW_ACCESS_NODE && !config.accessNode) {
   process.env.FLOW_ACCESS_NODE = config.accessNode;
 }
 
-// Check for stdio mode
-const isStdioMode = config.stdio;
+// Check if running in stdio mode
+const isStdioMode = process.argv.includes('--stdio');
+const port = config.port;
 
-// Only initialize express if not in stdio mode
-let app, sse;
+// Initialize SSE for streaming responses
+const sse = new SSE();
+
+// Start HTTP server if not in stdio mode
 if (!isStdioMode) {
-  app = express();
-  const port = config.port;
-
-  // Initialize SSE for streaming responses
-  sse = new SSE();
-
+  // Initialize Express app
+  const app = express();
+  
   // Middleware
   app.use(bodyParser.json());
   app.use(cors());
@@ -106,9 +107,9 @@ if (!isStdioMode) {
     try {
       const result = await handleToolCall(tool, parameters, sse);
       res.json({ result });
-    } catch (error) {
-      console.error('Error handling tool call:', error);
-      res.status(500).json({ error: error.message });
+    } catch (err) {
+      error('Error handling tool call:', err);
+      res.status(500).json({ error: err.message });
     }
   });
 
@@ -133,22 +134,22 @@ if (!isStdioMode) {
   const startServer = (port) => {
     try {
       const server = app.listen(port, () => {
-        console.log(`Flow MCP server v${packageJson.version} listening on port ${port}`);
-        console.log(`Using Flow network: ${process.env.FLOW_NETWORK}`);
-        console.log(`Using Flow access node: ${process.env.FLOW_ACCESS_NODE}`);
-        console.log(`FCL configured with ${Object.keys(networks[process.env.FLOW_NETWORK.toLowerCase()].contracts).length} contract addresses`);
+        log(`Flow MCP server v${packageJson.version} listening on port ${port}`);
+        log(`Using Flow network: ${process.env.FLOW_NETWORK}`);
+        log(`Using Flow access node: ${process.env.FLOW_ACCESS_NODE}`);
+        log(`FCL configured with ${Object.keys(networks[process.env.FLOW_NETWORK.toLowerCase()].contracts).length} contract addresses`);
       });
       
       server.on('error', (err) => {
         if (err.code === 'EADDRINUSE') {
-          console.log(`Port ${port} is in use, trying ${port + 1}...`);
+          log(`Port ${port} is in use, trying ${port + 1}...`);
           startServer(port + 1);
         } else {
-          console.error('Server error:', err);
+          error('Server error:', err);
         }
       });
     } catch (err) {
-      console.error('Failed to start server:', err);
+      error('Failed to start server:', err);
     }
   };
   
@@ -157,10 +158,7 @@ if (!isStdioMode) {
 
 // Handle stdio mode
 if (isStdioMode) {
-  console.log('Running in stdio mode for MCP integration');
-  console.log(`Using Flow network: ${process.env.FLOW_NETWORK}`);
-  console.log(`FCL configured with ${Object.keys(networks[process.env.FLOW_NETWORK.toLowerCase()].contracts).length} contract addresses`);
-  
+  // In stdio mode, we don't output any logs to avoid corrupting the JSON communication
   process.stdin.setEncoding('utf8');
   let buffer = '';
   
@@ -179,7 +177,7 @@ if (isStdioMode) {
           process.stdout.write(JSON.stringify({ result }) + '\n');
         }
       }
-    } catch (error) {
+    } catch (err) {
       // If JSON parsing fails, it might be an incomplete message
       // Just continue collecting more data
       if (buffer.length > 1000000) {
@@ -191,4 +189,4 @@ if (isStdioMode) {
   });
 }
 
-export default app;
+export default express();

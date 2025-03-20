@@ -1,6 +1,7 @@
 import * as fcl from '@onflow/fcl';
 import * as t from '@onflow/types';
 import { resolveDomain } from './domain.js';
+import { error } from '../utils/logger.js';
 
 /**
  * Find Cadence Owned Accounts (COA) associated with Flow-EVM addresses
@@ -45,8 +46,8 @@ export async function findCadenceOwnedAccounts(address) {
       evmAddress: evmAddress || null,
       network: fcl.config().get('flow.network')
     };
-  } catch (error) {
-    console.error("Error finding Cadence Owned Accounts:", error);
-    throw new Error(`Failed to find Cadence Owned Accounts: ${error.message}`);
+  } catch (err) {
+    error("Error finding Cadence Owned Accounts:", err);
+    throw new Error(`Failed to find Cadence Owned Accounts: ${err.message}`);
   }
 } 
